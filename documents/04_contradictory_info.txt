@@ -1,0 +1,4 @@
+Project status report:
+- The migration is fully complete and all users are on the new system.
+- No migration work has started due to pending approvals.
+- Go-live happened last month and is scheduled for next quarter.

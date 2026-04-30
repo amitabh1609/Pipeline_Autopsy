@@ -1,0 +1,9 @@
+Invoice #INV-1001
+Date: 2026-04-10
+Vendor: Northwind Supplies
+Customer: Blue Harbor Retail
+Items: 3 office chairs ($120 each), 2 desks ($310 each)
+Subtotal: $980
+Tax: $98
+Total Due: $1,078
+Payment Terms: Net 30

@@ -1,0 +1,7 @@
+Ticket ID: TCK-4521
+Customer: Priya Sen
+Issue: Mobile app crashes on launch after update 4.2.1
+Device: Android 14, Pixel 8
+Observed at: 2026-04-25 09:20 UTC
+Requested action: rollback or hotfix guidance
+Priority: High
