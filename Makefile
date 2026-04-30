@@ -7,4 +7,3 @@ smoke:
 
 test:
 	$(PYTHON) -m pytest -q
-

@@ -63,11 +63,13 @@ pip install -r requirements.txt
 make smoke
 ```
 
-Optional:
+## Tracing (Phase 2)
 
-```bash
-python3 main.py --document documents/03_ambiguous_text.txt --document-id ambiguous_case_1
-```
+Every pipeline run now writes a trace with one span per step to:
+- SQLite: `data/traces.sqlite` (configurable via `TRACE_DB_PATH`)
+- JSONL: `data/traces.jsonl` (configurable via `TRACE_JSONL_PATH`)
+
+This works in both `LLM_MODE=mock` and `LLM_MODE=openai`.
 
 ## Logging Behavior
 
@@ -86,8 +88,3 @@ The `documents/` folder includes at least 5 examples:
 - ambiguous text
 - contradictory information
 - very short/missing context input
-
-## Next Phase (not implemented yet)
-
-Tracing layer, backward root-cause walking, failure taxonomy classification, and eval dataset growth.
-
