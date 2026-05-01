@@ -14,11 +14,15 @@ failure-forensics/
 ├── ui/
 ├── api/
 ├── eval/
+├── scripts/
 ├── data/
 ├── documents/
 ├── docker/
+├── Dockerfile
+├── docker-compose.yml
 ├── main.py
 ├── requirements.txt
+├── .env.example
 └── README.md
 ```
 
@@ -36,9 +40,10 @@ Each step accepts and returns **typed Pydantic models** and the runner executes 
 1. Create and activate a virtual environment (Python 3.11+ recommended).
 2. Install dependencies:
    - `pip install -r requirements.txt`
-3. Configure `.env`:
-   - `LLM_MODE=mock` (default, no API usage/cost)
-   - `OPENAI_API_KEY=your_key_here` (only required when `LLM_MODE=openai`)
+3. Configure secrets (never commit keys):
+   - Copy `.env.example` to `.env`
+   - Set `LLM_MODE=mock` (default, no API usage/cost) or `LLM_MODE=openai`
+   - Set `OPENAI_API_KEY` only when using `LLM_MODE=openai`
 
 ## Run
 
@@ -61,6 +66,48 @@ pip install -r requirements.txt
 
 # run local zero-cost validation suite
 make smoke
+```
+
+GitHub Actions runs the same suite on every push/PR to `main`.
+
+## FastAPI
+
+```bash
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+- `GET /health` — liveness
+- `POST /pipeline/run` — JSON body `{ "document_id", "text" }`
+- `POST /pipeline/analyze` — run pipeline plus judge/diagnosis/regression snapshot
+- `GET /` redirects to `/docs` (Swagger).
+
+## Streamlit UI
+
+```bash
+streamlit run ui/app.py
+```
+
+Explore traces, run/diagnose pipelines, and open the **Failure analytics** tab (aggregates `eval/failure_dataset.jsonl`). Theme lives under `.streamlit/config.toml`.
+
+## Docker
+
+```bash
+make docker-build   # or: docker compose build
+make docker-up      # or: docker compose up
+```
+
+- **API:** http://localhost:8000/docs  
+- **UI:** http://localhost:8501  
+
+Compose passes `LLM_MODE` and `OPENAI_API_KEY` from your environment or a local `.env` file next to `docker-compose.yml`. Mounts keep `data/` and `eval/` on the host.
+
+## Demo document bulk generator (Phase 6)
+
+Creates synthetic `.txt` files under `documents/generated/` (gitignored):
+
+```bash
+make demo-docs
+# or: python3 scripts/generate_demo_docs.py --count 50 --out documents/generated
 ```
 
 ## Tracing (Phase 2)
@@ -94,6 +141,10 @@ Each step emits one JSON log entry with:
 - typed output payload (when successful)
 - success/failure flag
 - error message (when failed)
+
+## Failure analytics (Phase 5)
+
+The Streamlit **Failure analytics** tab charts failure taxonomy, failing steps, and timelines from `eval/failure_dataset.jsonl`. Failures are appended when diagnosis marks a run as failed (CLI `--analyze` or UI).
 
 ## Sample Documents
 
