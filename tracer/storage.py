@@ -148,3 +148,22 @@ class TraceStorage:
                     if item.get(key):
                         item[key] = json.loads(item[key])
                 yield item
+
+    def list_recent_traces(self, *, limit: int = 50) -> Iterable[Dict[str, Any]]:
+        self.ensure_schema()
+        with self._connect() as conn:
+            cur = conn.execute(
+                """
+                SELECT trace_id, document_id, started_at, ended_at, status, attributes_json
+                FROM traces
+                ORDER BY started_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            )
+            cols = [c[0] for c in cur.description]
+            for row in cur.fetchall():
+                item = dict(zip(cols, row))
+                if item.get("attributes_json"):
+                    item["attributes_json"] = json.loads(item["attributes_json"])
+                yield item

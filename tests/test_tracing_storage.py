@@ -28,3 +28,8 @@ def test_trace_writes_four_spans_in_mock_mode(monkeypatch, tmp_path: Path):
     spans = list(storage.list_spans(trace_id))
     assert [s["name"] for s in spans] == ["intake", "extraction", "classification", "summarization"]
     assert all(s["status"] in {"OK", "ERROR"} for s in spans)
+
+    listed = list(storage.list_recent_traces(limit=10))
+    assert listed
+    assert listed[0]["trace_id"] == trace_id
+    assert listed[0]["document_id"] == "trace_test"

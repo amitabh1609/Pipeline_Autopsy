@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -57,6 +57,7 @@ class SummarizationOutput(BaseModel):
 
 
 class PipelineResult(BaseModel):
+    trace_id: Optional[str] = None
     intake: IntakeOutput
     extraction: ExtractionOutput
     classification: ClassificationOutput

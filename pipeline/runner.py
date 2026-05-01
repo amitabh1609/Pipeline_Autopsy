@@ -132,6 +132,7 @@ def run_pipeline(document_id: str, text: str) -> PipelineResult:
 
     tracer.end_trace(trace, status="OK")
     return PipelineResult(
+        trace_id=trace.trace_id,
         intake=intake_output,
         extraction=extraction_output,
         classification=classification_output,

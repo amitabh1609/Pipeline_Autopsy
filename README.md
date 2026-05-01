@@ -71,6 +71,21 @@ Every pipeline run now writes a trace with one span per step to:
 
 This works in both `LLM_MODE=mock` and `LLM_MODE=openai`.
 
+## Analyzer (Phase 3)
+
+Run end-to-end with diagnosis:
+
+```bash
+python3 main.py --document documents/03_ambiguous_text.txt --analyze
+```
+
+Analyzer output includes:
+- judge pass/fail and rationale
+- inferred failing step via backward span walk
+- failure taxonomy label
+- failure case capture to `eval/failure_dataset.jsonl` (failures only)
+- regression snapshot (`total`, `failed`, `pass_rate`)
+
 ## Logging Behavior
 
 Each step emits one JSON log entry with:
