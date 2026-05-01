@@ -1,1 +1,1 @@
-"""Scaffold for later phases."""
+"""Eval dataset capture, regression snapshot, and failure analytics."""

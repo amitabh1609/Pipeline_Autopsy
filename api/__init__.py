@@ -1,1 +1,1 @@
-"""Scaffold for later phases."""
+"""FastAPI app lives in api.main."""
