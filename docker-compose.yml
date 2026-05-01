@@ -1,7 +1,6 @@
 # TraceBack — API + Streamlit (mock LLM by default).
 # OpenAI: export OPENAI_API_KEY=… and LLM_MODE=openai before `docker compose up`,
 # or add those vars to a `.env` file next to this compose file (Compose loads it).
-# TraceBack — API + Streamlit
 services:
   api:
     build: .
@@ -16,13 +15,7 @@ services:
 
   ui:
     build: .
-    command:
-      - streamlit
-      - run
-      - ui/app.py
-      - --server.address=0.0.0.0
-      - --server.port=8501
-      - --server.headless=true
+    command: ["start-ui.sh"]
     ports:
       - "8501:8501"
     environment:

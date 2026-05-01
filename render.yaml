@@ -1,0 +1,34 @@
+# Render Blueprint — creates two web services from the same image.
+# After first deploy: set OPENAI_API_KEY + LLM_MODE=openai in the Render dashboard if needed.
+#
+# Note: each service has its own ephemeral filesystem — SQLite traces are not shared between API and UI.
+# For shared persistence, use a VM + docker compose or attach Render disks (paid) and point both at one DB path.
+version: "1"
+services:
+  - type: web
+    name: traceback-api
+    runtime: docker
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerCommand: start-api.sh
+    envVars:
+      - key: LLM_MODE
+        value: mock
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
+
+  - type: web
+    name: traceback-ui
+    runtime: docker
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerCommand: start-ui.sh
+    envVars:
+      - key: LLM_MODE
+        value: mock
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
