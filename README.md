@@ -109,15 +109,23 @@ Containers listen on **`PORT`** when the platform sets it (`scripts/start-api.sh
 
 **Important:** On managed hosts, **SQLite files are usually ephemeral** unless you add a **persistent disk** or external DB. API and UI each run separate containers on dual-service setups, so **traces are not shared** between them unless you redesign storage.
 
-### Option A — Render (Blueprint: API + UI)
+### Option A — Render first (recommended path)
 
-1. Push this repo to GitHub (already done if you use Render’s Git integration).
-2. In [Render](https://render.com): **New → Blueprint** → connect the repo → select `render.yaml`.
-3. Create the blueprint. Render builds one Docker image and runs **two** web services (`traceback-api`, `traceback-ui`).
-4. In each service **Environment**, add **`OPENAI_API_KEY`** (secret) and set **`LLM_MODE`** to `openai` when you want live LLM calls (otherwise leave `mock`).
-5. Open the **API** service URL + `/docs`. Open the **UI** service URL (Streamlit).
+These steps assume the repo is on GitHub with **`render.yaml`** at the root (`Failure_Forensics`).
 
-Render may bill for Docker web services depending on plan; check their current pricing.
+1. Create a [Render](https://render.com) account and connect **GitHub** when asked.
+2. Click **New +** → **Blueprint**.
+3. Pick this repository. Render should detect **`render.yaml`** automatically (confirm the path is repo root).
+4. Click **Apply** / **Create blueprint**. Wait for **two** web services to provision: **`traceback-api`** and **`traceback-ui`** (first build can take several minutes).
+5. When both show **Live**, open:
+   - **API docs:** your API hostname plus **`/docs`** (or **`/health`** for a quick check).
+   - **UI:** the Streamlit service URL (no path needed).
+6. **OpenAI (optional):** In the Render dashboard, open **each** service → **Environment** → add **`OPENAI_API_KEY`** with your key. Set **`LLM_MODE`** to **`openai`** on **both** services when you want live LLM calls. Leave **`mock`** for zero-cost demos (pipeline uses offline heuristics).
+7. **Redeploy** each service after changing env vars (Render usually offers **Manual Deploy**).
+
+**Note:** SQLite **`data/`** lives inside each container separately unless you add Render disks. API traces and UI traces **do not match** across the two URLs unless you change storage (fine for demos).
+
+**Pricing:** Docker web services may require a **paid** instance type on Render—check their current plans before relying on a free tier.
 
 ### Option B — Fly.io (API only in `fly.toml`)
 

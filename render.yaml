@@ -9,8 +9,10 @@ services:
     name: traceback-api
     runtime: docker
     region: oregon
+    branch: main
     dockerfilePath: ./Dockerfile
-    dockerCommand: start-api.sh
+    dockerCommand: /usr/local/bin/start-api.sh
+    healthCheckPath: /health
     envVars:
       - key: LLM_MODE
         value: mock
@@ -23,8 +25,10 @@ services:
     name: traceback-ui
     runtime: docker
     region: oregon
+    branch: main
     dockerfilePath: ./Dockerfile
-    dockerCommand: start-ui.sh
+    dockerCommand: /usr/local/bin/start-ui.sh
+    healthCheckPath: /
     envVars:
       - key: LLM_MODE
         value: mock
