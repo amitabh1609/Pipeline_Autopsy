@@ -16,4 +16,4 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 8000 8501
 
 # Default: API (Render/Fly inject PORT; local Docker Compose defaults to 8000)
-CMD ["start-api.sh"]
+CMD ["/usr/local/bin/start-api.sh"]

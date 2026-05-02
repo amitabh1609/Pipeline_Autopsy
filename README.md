@@ -127,6 +127,8 @@ These steps assume the repo is on GitHub with **`render.yaml`** at the root (`Fa
 
 **Pricing:** Docker web services may require a **paid** instance type on Render—check their current plans before relying on a free tier.
 
+**If both URLs fail or spin forever:** merge the latest repo (includes `healthCheckPath` fixes for Streamlit), then **Manual Deploy** both services. In the dashboard open **Logs** — look for build errors or crash loops. **Cold starts** on free/low tiers can take **30–60s** after sleep—refresh once. Confirm each service shows **Live**, not **Build failed** / **Deploy failed**. Test raw endpoints: **`…/health`** (API) and **`/_stcore/health`** (UI). Ensure GitHub’s **default branch** matches what Render deploys (push `render.yaml` to that branch).
+
 ### Option B — Fly.io (API only in `fly.toml`)
 
 1. Install the [Fly CLI](https://fly.io/docs/hubs/cli/) and log in: `fly auth login`.

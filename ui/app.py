@@ -323,6 +323,8 @@ def _sidebar() -> None:
             f"LLM_MODE\n{os.getenv('LLM_MODE', 'mock').strip() or 'mock'}",
             language="text",
         )
+        st.divider()
+        st.caption("Made by GS Lahari")
 
 
 @st.cache_data
@@ -680,6 +682,9 @@ def main() -> None:
 
     with tab_analytics:
         _render_failure_analytics()
+
+    st.divider()
+    st.caption("Made by GS Lahari")
 
 
 if __name__ == "__main__":

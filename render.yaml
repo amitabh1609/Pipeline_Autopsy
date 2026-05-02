@@ -8,8 +8,8 @@ services:
   - type: web
     name: traceback-api
     runtime: docker
+    plan: free
     region: oregon
-    branch: main
     dockerfilePath: ./Dockerfile
     dockerCommand: /usr/local/bin/start-api.sh
     healthCheckPath: /health
@@ -21,14 +21,15 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
+  # Streamlit "/" often fails HTTP health checks (redirect/HTML). Use Streamlit's core health route.
   - type: web
     name: traceback-ui
     runtime: docker
+    plan: free
     region: oregon
-    branch: main
     dockerfilePath: ./Dockerfile
     dockerCommand: /usr/local/bin/start-ui.sh
-    healthCheckPath: /
+    healthCheckPath: /_stcore/health
     envVars:
       - key: LLM_MODE
         value: mock
