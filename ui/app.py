@@ -324,7 +324,7 @@ def _sidebar() -> None:
             language="text",
         )
         st.divider()
-        st.caption("Made by GS Lahari")
+        st.caption("Made by Amitabh Choudhury")
 
 
 @st.cache_data
@@ -684,7 +684,7 @@ def main() -> None:
         _render_failure_analytics()
 
     st.divider()
-    st.caption("Made by GS Lahari")
+    st.caption("Made by Amitabh Choudhury")
 
 
 if __name__ == "__main__":
