@@ -1,200 +1,163 @@
-# failure-forensics
+# Pipeline Autopsy
 
-Observability and root-cause diagnosis tool for multi-step AI pipelines.
+**Pipeline Autopsy** is an observability and intelligent diagnosis tool built for multi-step AI pipelines. It answers a question that every AI engineer eventually runs into: *when a pipeline fails, which step broke, and why?*
 
-This repository now includes **Phase 1**: a typed 4-step document pipeline with extraction, classification, and summarization that can run in offline mock mode or OpenAI mode.
+Instead of digging through raw logs and guessing, Pipeline Autopsy traces every step of the pipeline automatically, runs a built-in AI judge to evaluate the output, and produces a structured diagnosis that tells you exactly where things went wrong and how often.
 
-## Current Structure
+---
 
-```text
-failure-forensics/
-├── pipeline/
-├── tracer/
-├── analyzer/
-├── ui/
-├── api/
-├── eval/
-├── scripts/
-├── data/
-├── documents/
-├── docker/
-├── Dockerfile
-├── docker-compose.yml
-├── render.yaml
-├── fly.toml
-├── main.py
-├── requirements.txt
-├── .env.example
-└── README.md
-```
+## What Problem Does This Solve
 
-## Phase 1 Implemented
+Modern AI applications are not a single model call. They are pipelines: a document goes in, gets chunked, entities get extracted, it gets classified, summarized, and a final result comes out. When something in that chain fails or produces a bad result, it is nearly impossible to tell which step caused it just by looking at the final output.
 
-1. Intake: load and chunk document text
-2. Extraction: extract entities and facts with LLM
-3. Classification: classify document category
-4. Summarization: produce a concise final summary
+Pipeline Autopsy gives every pipeline run a full trace, records the input and output of each step, and when you run the analyzer it walks backward through the trace to pinpoint the exact step that failed. It also categorizes the failure and builds a historical dataset over time so you can spot patterns.
 
-Each step accepts and returns **typed Pydantic models** and the runner executes steps sequentially.
+---
 
-## Setup
+## Key Features
 
-1. Create and activate a virtual environment (Python 3.11+ recommended).
-2. Install dependencies:
-   - `pip install -r requirements.txt`
-3. Configure secrets (never commit keys):
-   - Copy `.env.example` to `.env`
-   - Set `LLM_MODE=mock` (default, no API usage/cost) or `LLM_MODE=openai`
-   - Set `OPENAI_API_KEY` only when using `LLM_MODE=openai`
+**End-to-End Pipeline Tracing**
+Every pipeline run is recorded span by span into both a SQLite database and a JSONL file. You get a complete history of what went in and what came out at each stage, for every run.
 
-## Run
+**Intelligent Failure Diagnosis**
+The built-in judge evaluates the final output and, if it fails, walks backward through the trace to find the root cause. Each failure gets a taxonomy label so you can group and analyze failure types over time.
+
+**Interactive Dashboard**
+A Streamlit web interface lets you browse traces, trigger new pipeline runs, and explore a Failure Analytics tab that charts failure trends, problematic steps, and timelines from the accumulated dataset.
+
+**REST API**
+A FastAPI backend exposes endpoints to run pipelines and retrieve diagnoses programmatically. The API is fully documented via Swagger at `/docs`.
+
+**Zero-Cost Local Mode**
+The entire system runs offline with `LLM_MODE=mock` using heuristics instead of API calls. You can explore, test, and demo the full feature set without spending a cent on any external service.
+
+**Docker Ready**
+One command spins up the API and the UI in separate containers. Cloud deployment configs for Render and Fly.io are included in the repo.
+
+---
+
+## Tech Stack
+
+Python 3.11, FastAPI, Streamlit, Pydantic, SQLite, Docker, GitHub Actions, OpenAI API (optional)
+
+---
+
+## The Pipeline
+
+When a document is submitted, it moves through four sequential steps:
+
+1. **Intake** — the document text is loaded and chunked into processable pieces
+2. **Extraction** — entities and key facts are pulled out using an LLM
+3. **Classification** — the document is assigned a category based on its content
+4. **Summarization** — a concise final summary is produced
+
+Each step accepts and returns strongly typed Pydantic models, so there is no ambiguity about what data flows between stages.
+
+---
+
+## Getting Started
+
+**Step 1.** Create and activate a Python virtual environment (Python 3.11 or higher recommended).
+
+**Step 2.** Install dependencies:
 
 ```bash
-# No-cost local run (default)
+pip install -r requirements.txt
+```
+
+**Step 3.** Copy the example environment file and configure it:
+
+```bash
+cp .env.example .env
+```
+
+Set `LLM_MODE=mock` to run fully offline at zero cost. Set `LLM_MODE=openai` and add your `OPENAI_API_KEY` to use real LLM calls.
+
+**Step 4.** Run the pipeline on a sample document:
+
+```bash
 python3 main.py --document documents/01_clean_invoice.txt
 ```
 
-To use OpenAI later:
-
-```bash
-LLM_MODE=openai python3 main.py --document documents/01_clean_invoice.txt
-```
-
-## Smoke Tests (no API cost)
-
-```bash
-# install deps once
-pip install -r requirements.txt
-
-# run local zero-cost validation suite
-make smoke
-```
-
-GitHub Actions runs the same suite on every push/PR to `main`.
-
-## FastAPI
-
-```bash
-uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-- `GET /health` — liveness
-- `POST /pipeline/run` — JSON body `{ "document_id", "text" }`
-- `POST /pipeline/analyze` — run pipeline plus judge/diagnosis/regression snapshot
-- `GET /` redirects to `/docs` (Swagger).
-
-## Streamlit UI
-
-```bash
-streamlit run ui/app.py
-```
-
-Explore traces, run/diagnose pipelines, and open the **Failure analytics** tab (aggregates `eval/failure_dataset.jsonl`). Theme lives under `.streamlit/config.toml`.
-
-## Docker
-
-```bash
-make docker-build   # or: docker compose build
-make docker-up      # or: docker compose up
-```
-
-- **API:** http://localhost:8000/docs  
-- **UI:** http://localhost:8501  
-
-Compose passes `LLM_MODE` and `OPENAI_API_KEY` from your environment or a local `.env` file next to `docker-compose.yml`. Mounts keep `data/` and `eval/` on the host.
-
-## Hosting (cloud)
-
-Containers listen on **`PORT`** when the platform sets it (`scripts/start-api.sh`, `scripts/start-ui.sh`). Local Compose still uses **8000** / **8501**.
-
-**Important:** On managed hosts, **SQLite files are usually ephemeral** unless you add a **persistent disk** or external DB. API and UI each run separate containers on dual-service setups, so **traces are not shared** between them unless you redesign storage.
-
-### Option A — Render first (recommended path)
-
-These steps assume the repo is on GitHub with **`render.yaml`** at the root (`Failure_Forensics`).
-
-1. Create a [Render](https://render.com) account and connect **GitHub** when asked.
-2. Click **New +** → **Blueprint**.
-3. Pick this repository. Render should detect **`render.yaml`** automatically (confirm the path is repo root).
-4. Click **Apply** / **Create blueprint**. Wait for **two** web services to provision: **`traceback-api`** and **`traceback-ui`** (first build can take several minutes).
-5. When both show **Live**, open:
-   - **API docs:** your API hostname plus **`/docs`** (or **`/health`** for a quick check).
-   - **UI:** the Streamlit service URL (no path needed).
-6. **OpenAI (optional):** In the Render dashboard, open **each** service → **Environment** → add **`OPENAI_API_KEY`** with your key. Set **`LLM_MODE`** to **`openai`** on **both** services when you want live LLM calls. Leave **`mock`** for zero-cost demos (pipeline uses offline heuristics).
-7. **Redeploy** each service after changing env vars (Render usually offers **Manual Deploy**).
-
-**Note:** SQLite **`data/`** lives inside each container separately unless you add Render disks. API traces and UI traces **do not match** across the two URLs unless you change storage (fine for demos).
-
-**Pricing:** Docker web services may require a **paid** instance type on Render—check their current plans before relying on a free tier.
-
-**If both URLs fail or spin forever:** merge the latest repo (includes `healthCheckPath` fixes for Streamlit), then **Manual Deploy** both services. In the dashboard open **Logs** — look for build errors or crash loops. **Cold starts** on free/low tiers can take **30–60s** after sleep—refresh once. Confirm each service shows **Live**, not **Build failed** / **Deploy failed**. Test raw endpoints: **`…/health`** (API) and **`/_stcore/health`** (UI). Ensure GitHub’s **default branch** matches what Render deploys (push `render.yaml` to that branch).
-
-### Option B — Fly.io (API only in `fly.toml`)
-
-1. Install the [Fly CLI](https://fly.io/docs/hubs/cli/) and log in: `fly auth login`.
-2. Edit **`fly.toml`** and set **`app`** to a unique app name (or run `fly apps create <name>` and match it here).
-3. From the repo root: `fly launch --no-deploy` (review region/machine) or `fly deploy` if the app already exists.
-4. Set secrets:  
-   `fly secrets set OPENAI_API_KEY=sk-...`  
-   `fly secrets set LLM_MODE=openai`
-5. Hit `https://<your-app>.fly.dev/docs`.
-
-Deploy Streamlit separately with another Fly app whose Docker command is **`start-ui.sh`**, or run the UI locally against the hosted API (would require wiring the UI to HTTP instead of in-process imports — not implemented yet).
-
-### Option C — Single VPS (simplest shared disk)
-
-Rent any small Linux VM, install Docker, clone the repo, add `.env`, run **`docker compose up -d`**. **data/** and **eval/** stay on the VM disk so API and UI share traces.
-
-## Demo document bulk generator (Phase 6)
-
-Creates synthetic `.txt` files under `documents/generated/` (gitignored):
-
-```bash
-make demo-docs
-# or: python3 scripts/generate_demo_docs.py --count 50 --out documents/generated
-```
-
-## Tracing (Phase 2)
-
-Every pipeline run now writes a trace with one span per step to:
-- SQLite: `data/traces.sqlite` (configurable via `TRACE_DB_PATH`)
-- JSONL: `data/traces.jsonl` (configurable via `TRACE_JSONL_PATH`)
-
-This works in both `LLM_MODE=mock` and `LLM_MODE=openai`.
-
-## Analyzer (Phase 3)
-
-Run end-to-end with diagnosis:
+To run with diagnosis enabled:
 
 ```bash
 python3 main.py --document documents/03_ambiguous_text.txt --analyze
 ```
 
-Analyzer output includes:
-- judge pass/fail and rationale
-- inferred failing step via backward span walk
-- failure taxonomy label
-- failure case capture to `eval/failure_dataset.jsonl` (failures only)
-- regression snapshot (`total`, `failed`, `pass_rate`)
+---
 
-## Logging Behavior
+## Running the UI
 
-Each step emits one JSON log entry with:
-- step name
-- typed input payload
-- typed output payload (when successful)
-- success/failure flag
-- error message (when failed)
+```bash
+streamlit run ui/app.py
+```
 
-## Failure analytics (Phase 5)
+Open your browser and explore traces, run pipelines, and view failure analytics all in one place.
 
-The Streamlit **Failure analytics** tab charts failure taxonomy, failing steps, and timelines from `eval/failure_dataset.jsonl`. Failures are appended when diagnosis marks a run as failed (CLI `--analyze` or UI).
+---
+
+## Running the API
+
+```bash
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Visit `http://127.0.0.1:8000/docs` for the interactive Swagger documentation.
+
+The two main endpoints are:
+
+`POST /pipeline/run` — submit a document and get a structured pipeline result
+
+`POST /pipeline/analyze` — run the pipeline and return a full diagnosis with judge output and regression snapshot
+
+---
+
+## Running with Docker
+
+```bash
+make docker-build
+make docker-up
+```
+
+The API will be available at `http://localhost:8000/docs` and the UI at `http://localhost:8501`.
+
+---
+
+## Tests
+
+```bash
+make smoke
+```
+
+This runs the full local validation suite with no API calls and no cost. The same suite runs automatically on every push to `main` via GitHub Actions.
+
+---
+
+## Cloud Deployment
+
+The repo includes ready-to-use configuration files for two hosting platforms.
+
+**Render** (recommended): Connect your GitHub repo, select Blueprint, and Render will detect `render.yaml` and provision both the API and UI services automatically. Set `OPENAI_API_KEY` and `LLM_MODE` in the Render dashboard environment settings if you want live LLM calls.
+
+**Fly.io**: Use the included `fly.toml` to deploy the API. Run `fly secrets set OPENAI_API_KEY=sk-...` to configure credentials, then `fly deploy`.
+
+**Single VPS**: Clone the repo on any Linux server with Docker installed, add your `.env` file, and run `docker compose up -d`. This is the simplest setup because both services share the same disk, so traces are consistent between the API and UI.
+
+---
 
 ## Sample Documents
 
-The `documents/` folder includes at least 5 examples:
-- clean invoice
-- clean support ticket
-- ambiguous text
-- contradictory information
-- very short/missing context input
+The `documents/` folder includes five example inputs to get you started right away: a clean invoice, a clean support ticket, an ambiguous text, a document with contradictory information, and a very short input with missing context. These cover a range of scenarios from clean runs to guaranteed failures, which is useful for testing the analyzer.
+
+You can also generate a large batch of synthetic documents:
+
+```bash
+make demo-docs
+```
+
+---
+
+## Author
+
+Built by **Amitabh Choudhury**
